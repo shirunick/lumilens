@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "name": "LumiLens",
+  "identifier": "lumilens",
+  "author": "shirunick",
+  "github": "https://github.com/shirunick/lumilens",
+  "homepage": "https://github.com/shirunick/lumilens",
+  "description": "Browse, explore, and curate character cards with Ari: Quick View, Card Picker, and Tinder swipe modes.",
+  "permissions": ["generation", "characters", "images", "chats"],
+  "entry_backend": "dist/backend.js",
+  "entry_frontend": "dist/frontend.js",
+  "storage_seed_files": [
+    {
+      "from": "assets/ari.png",
+      "to": "ari.png",
+      "required": true,
+      "overwrite": true
+    }
+  ]
+}
