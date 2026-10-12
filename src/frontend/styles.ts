@@ -273,6 +273,22 @@ export function addLumiLensStyles(ctx: SpindleFrontendContext): () => void {
       outline: none;
     }
     .ll-textarea:focus, .ll-select:focus { border-color: var(--ll-accent); }
+    .ll-stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ll-stepper-value {
+      min-width: 2ch;
+      text-align: center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .ll-stepper .ll-btn {
+      width: 40px;
+      padding-left: 0;
+      padding-right: 0;
+    }
     .ll-textarea { min-height: 76px; resize: vertical; }
 
     .ll-form { display: flex; flex-direction: column; gap: 14px; }

@@ -15,16 +15,21 @@ export const LLM_ACTIONS: readonly LlmAction[] = [
   'search',
 ]
 
+export type WarmKind = 'quick' | 'deep' | 'tinder'
+
+export const WARM_KINDS: readonly WarmKind[] = ['quick', 'deep', 'tinder']
+
 export interface Settings {
   connectionId: string | null
   testingMode: boolean
   perActionConnections: boolean
   connectionsByAction: Partial<Record<LlmAction, string | null>>
+  warmOnImport: boolean
+  warmOnImportKinds: WarmKind[]
+  warmOnImportConcurrency: number
 }
 
 export type TinderMode = 'out' | 'chat'
-
-export type WarmKind = 'quick' | 'deep' | 'tinder'
 
 export type TinderAction =
   | 'keep'
@@ -94,6 +99,9 @@ export const DEFAULT_SETTINGS: Settings = {
   testingMode: false,
   perActionConnections: false,
   connectionsByAction: {},
+  warmOnImport: false,
+  warmOnImportKinds: ['quick', 'deep', 'tinder'],
+  warmOnImportConcurrency: 2,
 }
 
 export const EMPTY_CACHE: CacheEntry = {

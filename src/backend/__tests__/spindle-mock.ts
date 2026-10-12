@@ -1,5 +1,6 @@
 import { EMPTY_CACHE, type CacheEntry, type Settings } from '../../shared/types'
 import { invalidateLibrary } from '../characters'
+import { __resetImportWarmForTests } from '../import-warm'
 import { resetSettingsMemo } from '../settings'
 import { resetWarmEstimate } from '../warm-library'
 
@@ -39,6 +40,10 @@ export function createSpindleMock(opts?: {
   const binary: BinaryStore = new Map()
   const frontendMessages: unknown[] = []
   const logs: string[] = []
+  const eventHandlers = new Map<
+    string,
+    Set<(payload: unknown, userId?: string) => void>
+  >()
 
   if (opts?.ariBytes) {
     binary.set('ari.png', opts.ariBytes)
@@ -100,6 +105,10 @@ export function createSpindleMock(opts?: {
       setJson: async (path: string, value: unknown) => {
         json.set(path, value)
       },
+      delete: async (path: string) => {
+        json.delete(path)
+        binary.delete(path)
+      },
       readBinary: async (path: string) => {
         const b = binary.get(path)
         if (!b) throw new Error('missing binary')
@@ -115,9 +124,26 @@ export function createSpindleMock(opts?: {
         delete (api as { __feHandler?: typeof handler }).__feHandler
       }
     },
+    on: (
+      event: string,
+      handler: (payload: unknown, userId?: string) => void,
+    ) => {
+      let set = eventHandlers.get(event)
+      if (!set) {
+        set = new Set()
+        eventHandlers.set(event, set)
+      }
+      set.add(handler)
+      return () => {
+        set?.delete(handler)
+      }
+    },
     log: {
       info: (msg: string) => {
         logs.push(msg)
+      },
+      warn: (msg: string) => {
+        logs.push(`WARN ${msg}`)
       },
     },
 
@@ -136,6 +162,11 @@ export function createSpindleMock(opts?: {
       json.set('settings.json', s)
       resetSettingsMemo()
     },
+    __emit: (event: string, payload: unknown, userId?: string) => {
+      const set = eventHandlers.get(event)
+      if (!set) return
+      for (const handler of set) handler(payload, userId)
+    },
   }
 
   return api
@@ -146,6 +177,7 @@ export function installSpindleMock(api: ReturnType<typeof createSpindleMock>) {
   invalidateLibrary()
   resetSettingsMemo()
   resetWarmEstimate()
+  __resetImportWarmForTests()
   return api
 }
 

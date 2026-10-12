@@ -6,6 +6,7 @@ import { mapLimit } from './util'
 declare const spindle: import('lumiverse-spindle-types').SpindleAPI
 
 const CLEAR_CONCURRENCY = 8
+const writeLocks = new Map<string, Promise<void>>()
 
 const FIELD_BY_KIND: Record<WarmKind, keyof Pick<CacheEntry, 'quickOverview' | 'deepDive' | 'tinderDesc'>> = {
   quick: 'quickOverview',
@@ -38,18 +39,54 @@ export async function setCache(
   characterId: string,
   patch: Partial<CacheEntry>,
 ): Promise<CacheEntry> {
-  const existing = (await getCache(characterId)) ?? { ...EMPTY_CACHE }
-  const next: CacheEntry = {
-    ...existing,
-    ...patch,
-    generatedAt: Date.now(),
+  const prev = writeLocks.get(characterId) ?? Promise.resolve()
+  let release!: () => void
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const tail = prev.then(() => held)
+  writeLocks.set(characterId, tail)
+  await prev
+  try {
+    const existing = (await getCache(characterId)) ?? { ...EMPTY_CACHE }
+    const next: CacheEntry = {
+      ...existing,
+      ...patch,
+      generatedAt: Date.now(),
+    }
+    await spindle.storage.setJson(CACHE_PATH(characterId), next)
+    return next
+  } finally {
+    release()
+    if (writeLocks.get(characterId) === tail) writeLocks.delete(characterId)
   }
-  await spindle.storage.setJson(CACHE_PATH(characterId), next)
-  return next
 }
 
 export async function getOrEmpty(characterId: string): Promise<CacheEntry> {
   return (await getCache(characterId)) ?? { ...EMPTY_CACHE }
+}
+
+export async function deleteCache(characterId: string): Promise<boolean> {
+  const path = CACHE_PATH(characterId)
+  const prev = writeLocks.get(characterId) ?? Promise.resolve()
+  let release!: () => void
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const tail = prev.then(() => held)
+  writeLocks.set(characterId, tail)
+  await prev
+  try {
+    const existing = await getCache(characterId)
+    if (!existing) return false
+    await spindle.storage.delete(path)
+    return true
+  } catch {
+    return false
+  } finally {
+    release()
+    if (writeLocks.get(characterId) === tail) writeLocks.delete(characterId)
+  }
 }
 
 export async function clearCachedKind(

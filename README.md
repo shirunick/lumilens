@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-v0.1.0-purple" />
+  <img alt="version" src="https://img.shields.io/badge/version-v0.1.1-purple" />
 </p>
 
 I'm Ari. I have read every card in your library. Some of them twice, against my better judgment.
@@ -64,6 +64,7 @@ The boring part. Everything is collapsed until you need it.
 
 - **LLM connection.** One connection for everything, or a different one per action: Quick Pitch, Deep Dive, Tinder blurbs, and card search.
 - **Cache.** Clear Quick Pitches, Deep Dives, or Tinder blurbs separately. Or warm the library: tick what you want, I estimate the tokens, and I write the missing pieces ahead of time. You can stop me halfway.
+- **Warm on create.** When a new char card lands in your library, I can write the kinds you tick in the background. Each kind is its own call, queued so a bulk import does not flood the provider. Parallel calls are a setting. Delete the card and I forget its cache too.
 - **Testing / Debug.** Testing mode makes Purge Mode only pretend to delete.
 
 ## Install
@@ -84,6 +85,7 @@ Permissions I ask for:
 ## Good to know
 
 - I remember what I write, per card. Hit Regenerate when you disagree. I will not take it personally.
+- Warm on create is off until you turn it on. Deep Dive is the slow one when it runs.
 - A fast model is fine for Tinder blurbs. Give Deep Dives something smarter.
 - Category filters narrow the shortlist when they match. If nothing matches, I shortlist from the whole library instead. Still only a handful goes to the model.
 - Purge Mode deletes for real unless Testing mode is on.

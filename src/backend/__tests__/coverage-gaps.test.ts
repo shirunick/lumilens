@@ -49,6 +49,9 @@ describe('coverage gaps', () => {
       testingMode: false,
       perActionConnections: false,
       connectionsByAction: {},
+      warmOnImport: false,
+      warmOnImportKinds: ['quick', 'deep', 'tinder'],
+      warmOnImportConcurrency: 2,
     })
   })
 

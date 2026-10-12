@@ -105,6 +105,44 @@ export function mountConnectionPicker(
   })
   const perActionBox = h('div', { class: 'll-conn-actions', hidden: true }, actionRows)
   const testingCb = h('input', { type: 'checkbox', class: 'll-switch' })
+  const warmOnImportCb = h('input', { type: 'checkbox', class: 'll-switch' })
+  const importQuick = h('input', { type: 'checkbox', class: 'll-switch' })
+  const importDeep = h('input', { type: 'checkbox', class: 'll-switch' })
+  const importTinder = h('input', { type: 'checkbox', class: 'll-switch' })
+  let importConcurrency = 2
+  const importConcurrencyValue = h('span', {
+    class: 'll-stepper-value',
+    text: '2',
+    'aria-live': 'polite',
+  })
+  const importConcurrencyDown = button('−', {
+    kind: 'ghost',
+    onClick: () => setImportConcurrency(importConcurrency - 1),
+  })
+  const importConcurrencyUp = button('+', {
+    kind: 'ghost',
+    onClick: () => setImportConcurrency(importConcurrency + 1),
+  })
+  importConcurrencyDown.setAttribute('aria-label', 'Fewer parallel calls')
+  importConcurrencyUp.setAttribute('aria-label', 'More parallel calls')
+  const importConcurrencyStepper = h('div', { class: 'll-stepper' }, [
+    importConcurrencyDown,
+    importConcurrencyValue,
+    importConcurrencyUp,
+  ])
+  const importWarmBody = h('div', { class: 'll-conn-actions' }, [
+    switchRow('Quick Pitch', importQuick),
+    switchRow('Deep Dive', importDeep),
+    switchRow('Tinder blurb', importTinder),
+    h('div', { class: 'll-conn-field' }, [
+      h('span', { class: 'll-conn-label', text: 'Parallel calls' }),
+      importConcurrencyStepper,
+    ]),
+    h('div', {
+      class: 'll-muted',
+      text: 'Each kind is its own LLM call with the normal prompt. Parallel calls are shared across all new cards, so a bulk import queues instead of flooding the provider. Deep Dive is the slow one.',
+    }),
+  ])
   const clearStatus = h('div', { class: 'll-muted' })
 
   const clearBtns = (['quick', 'deep', 'tinder'] as const).map((kind) => {
@@ -176,6 +214,18 @@ export function mountConnectionPicker(
       { open: false },
     ),
     collapsiblePanel(
+      'Warm on create',
+      [
+        switchRow(
+          'Warm new cards automatically',
+          warmOnImportCb,
+          'When a card is created, I write each ticked kind in the background as a separate LLM call.',
+        ),
+        importWarmBody,
+      ],
+      { open: false },
+    ),
+    collapsiblePanel(
       'Testing / Debug',
       [
         h('div', { class: 'll-subcat' }, [
@@ -240,6 +290,30 @@ export function mountConnectionPicker(
     perActionBox.hidden = !perActionCb.checked
   }
 
+  function setImportConcurrency(next: number, persist = true): void {
+    importConcurrency = Math.min(8, Math.max(1, Math.round(next)))
+    importConcurrencyValue.textContent = String(importConcurrency)
+    importConcurrencyDown.disabled = !warmOnImportCb.checked || importConcurrency <= 1
+    importConcurrencyUp.disabled = !warmOnImportCb.checked || importConcurrency >= 8
+    if (persist) void save().catch(() => {})
+  }
+
+  function syncImportWarmUi(): void {
+    importWarmBody.hidden = !warmOnImportCb.checked
+    importQuick.disabled = !warmOnImportCb.checked
+    importDeep.disabled = !warmOnImportCb.checked
+    importTinder.disabled = !warmOnImportCb.checked
+    setImportConcurrency(importConcurrency, false)
+  }
+
+  function readImportKinds(): WarmKind[] {
+    const kinds: WarmKind[] = []
+    if (importQuick.checked) kinds.push('quick')
+    if (importDeep.checked) kinds.push('deep')
+    if (importTinder.checked) kinds.push('tinder')
+    return kinds.length > 0 ? kinds : ['quick', 'deep', 'tinder']
+  }
+
   function updateWarn(): void {
     const ids = [
       select.value,
@@ -271,6 +345,12 @@ export function mountConnectionPicker(
     }
     perActionCb.checked = settings.perActionConnections
     syncPerActionUi()
+    warmOnImportCb.checked = settings.warmOnImport
+    importQuick.checked = settings.warmOnImportKinds.includes('quick')
+    importDeep.checked = settings.warmOnImportKinds.includes('deep')
+    importTinder.checked = settings.warmOnImportKinds.includes('tinder')
+    importConcurrency = settings.warmOnImportConcurrency
+    syncImportWarmUi()
     updateWarn()
   }
 
@@ -291,6 +371,9 @@ export function mountConnectionPicker(
         testingMode: testingCb.checked,
         perActionConnections: perActionCb.checked,
         connectionsByAction: readConnectionsByAction(),
+        warmOnImport: warmOnImportCb.checked,
+        warmOnImportKinds: readImportKinds(),
+        warmOnImportConcurrency: importConcurrency,
       },
     })
     settings = next.settings
@@ -443,6 +526,13 @@ export function mountConnectionPicker(
     void save().catch(() => {})
   }
   testingCb.onchange = () => void save().catch(() => {})
+  warmOnImportCb.onchange = () => {
+    syncImportWarmUi()
+    void save().catch(() => {})
+  }
+  importQuick.onchange = () => void save().catch(() => {})
+  importDeep.onchange = () => void save().catch(() => {})
+  importTinder.onchange = () => void save().catch(() => {})
   kindQuick.onchange = () => scheduleEstimate()
   kindDeep.onchange = () => scheduleEstimate()
   kindTinder.onchange = () => scheduleEstimate()
