@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-v0.1.1-purple" />
+  <img alt="version" src="https://img.shields.io/badge/version-v0.1.2-purple" />
 </p>
 
 I'm Ari. I have read every card in your library. Some of them twice, against my better judgment.

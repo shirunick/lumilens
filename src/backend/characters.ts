@@ -19,6 +19,8 @@ export type CharacterDTO = {
   alternate_greetings: string[]
   creator: string
   image_id: string | null
+  created_at?: number
+  updated_at?: number
 }
 
 export async function listAllCharacters(

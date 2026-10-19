@@ -20,6 +20,7 @@ import {
   generateQuickOverview,
   generateTinderDesc,
 } from './generate'
+import { noteUserContext } from './import-warm'
 import { findCards, surpriseCharacter } from './picker'
 import { getSettings, setSettings } from './settings'
 import {
@@ -211,6 +212,7 @@ export async function handleFrontendMessage(
   userId: string,
 ): Promise<void> {
   const uid = userId || undefined
+  noteUserContext(uid)
   if (!isFrontendMessage(payload) || !isKnownType(payload.type)) {
     const requestId = requestIdOf(payload)
     if (requestId) {
